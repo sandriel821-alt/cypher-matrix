@@ -1,0 +1,46 @@
+name: 🔄 Kaggle GPU Repush (cada 2h)
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  repush:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - user: sandriel
+            key: ${{ secrets.KAGGLE_KEY_C1 }}
+          - user: adan9013
+            key: ${{ secrets.KAGGLE_KEY_C2 }}
+          - user: alberto1283
+            key: ${{ secrets.KAGGLE_KEY_C3 }}
+          - user: ana615
+            key: ${{ secrets.KAGGLE_KEY_C4 }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: sandriel821-alt/Cypher
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: cypher
+
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+
+      - name: Repush ${{ matrix.user }}
+        run: |
+          pip install kaggle -q
+          mkdir -p ~/.kaggle
+          cat > ~/.kaggle/kaggle.json << AUTH
+          {"username":"${{ matrix.user }}","key":"${{ matrix.key }}"}
+          AUTH
+          chmod 600 ~/.kaggle/kaggle.json
+          cd cypher && python3 scripts/kaggle_push.py
+        env:
+          CYPHER_BRIDGE: ${{ secrets.CYPHER_BRIDGE }}
